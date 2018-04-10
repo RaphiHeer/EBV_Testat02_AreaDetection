@@ -8,7 +8,8 @@ namespace HSLU
 		debugImage0("Debug Image 0"),
 		debugImage1("Debug Image 1"),
 		debugImage2("Debug Image 2"),
-		mParams(NULL)
+		mParams(NULL),
+		mProcessingDbgImages(NULL)
 	{
 		mProcessName = "Process2Teach";
 		// Do not add functionality here which can go wrong.
