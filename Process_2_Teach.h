@@ -72,6 +72,8 @@ namespace HSLU
 		std::string debugImage1;
 		std::string debugImage2;
 
+		cv::Mat mPrevImage;
+
 	private:
 		/**
 		* @brief  Pointer to parameters.

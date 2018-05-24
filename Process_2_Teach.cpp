@@ -58,33 +58,57 @@ namespace HSLU
 		// Place your code below 
 		// *********************************
 		
-		//example debug message
-		addDebugMessage("Calculate inverse image.");
-		
-		//initialize processing result (can be skipped if opencv function is used)
-		mProcImage = cv::Mat(inputImage.rows, inputImage.cols, inputImage.type());
-		
-		//"manually" invert the gray scale image		
-		//loop over rows and cols and do sth. with pixel		
-		for (int rows = 0; rows < inputImage.rows; rows++) {
-			for (int cols = 0; cols < inputImage.cols; cols++) {
-				//access element at position (rows, cols) in the array and cast as unsigned char
-				mProcImage.at<unsigned char>(rows, cols) = 255 - inputImage.at<unsigned char>(rows, cols);
+		if(false) // mPrevImage.size() != cv::Size()
+		{
+			// Processing image
+			addDebugMessage("Calculating image");
+
+			int32_t threshold = mParams->Process2Teach_binaryThreshold.getValueAsInt();
+
+			// Differenzbild
+			cv::Mat diffImage;
+			cv::absdiff(inputImage, mPrevImage, diffImage);
+
+			// Binarisierung
+			cv::Mat binaryImage;
+			cv::threshold(diffImage, binaryImage, threshold, 255, CV_THRESH_BINARY);
+
+			// Morphologie
+			cv::Mat kernel = cv::Mat::ones(5, 5, CV_8UC1);
+			cv::morphologyEx(binaryImage, binaryImage, cv::MORPH_CLOSE, kernel);
+
+			// Region labeling
+			cv::Mat stats, centroids, labelImage;
+			connectedComponentsWithStats(binaryImage, labelImage, stats, centroids);
+
+			cv::Mat resultImage = inputImage.clone();
+
+			for(int i = 1; i < stats.rows; i++) {
+				int topLeftx = stats.at<int>(i, 0);
+				int topLefty = stats.at<int>(i, 1);
+				int width = stats.at<int>(i, 2);
+				int height = stats.at<int>(i, 3);
+
+				int area = stats.at<int>(i, 4);
+
+				double cx = centroids.at<double>(i, 0);
+				double cy = centroids.at<double>(i, 1);
+
+				cv::Rect rect(topLeftx, topLefty, width, height);
+				cv::rectangle(resultImage, rect, cv::Scalar(255, 0, 0));
+
+				cv::Point2d cent(cx, cy);
+				cv::circle(resultImage, cent, 5, cv::Scalar(128,0,0), -1);
 			}
+
+			if(mProcessingDbgImages)
+			{
+				mProcessingDbgImages->addDebugImage(debugImage0, resultImage);
+				//mProcessingDbgImages->addDebugImage(debugImage1, resultImage);
+			}
+
 		}
-
-		//this would be the short version using opencv function of inverse calculation (mProcImage could be empty)
-		//cv::subtract(255, inputImage, mProcImage);
-
-
-		//here the result images to be shown in the VCA Web GUI are set
-		//currently only one entry (mProcImage) is used
-		if(mProcessingDbgImages) {
-			mProcessingDbgImages->addDebugImage(debugImage0, mProcImage);
-			//two additional debug images can be added to be shown on VCA Web GUI
-			//mProcessingDbgImages->addDebugImage(debugImage1, ???);	 
-			//mProcessingDbgImages->addDebugImage(debugImage2, ???);
-		}
+		mPrevImage = inputImage;
 			
 		return imageData;
 	}
