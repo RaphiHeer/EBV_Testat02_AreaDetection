@@ -74,6 +74,8 @@ namespace HSLU
 
 		cv::Mat mPrevImage;
 
+		cv::Mat mEstimatedBackground;
+
 	private:
 		/**
 		* @brief  Pointer to parameters.

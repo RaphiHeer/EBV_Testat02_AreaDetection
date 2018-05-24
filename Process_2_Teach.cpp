@@ -58,7 +58,7 @@ namespace HSLU
 		// Place your code below 
 		// *********************************
 		
-		if(false) // mPrevImage.size() != cv::Size()
+		if(mEstimatedBackground.size() != cv::Size()) // mPrevImage.size() != cv::Size()
 		{
 			// Processing image
 			addDebugMessage("Calculating image");
@@ -75,15 +75,18 @@ namespace HSLU
 
 			// Morphologie
 			cv::Mat kernel = cv::Mat::ones(5, 5, CV_8UC1);
-			cv::morphologyEx(binaryImage, binaryImage, cv::MORPH_CLOSE, kernel);
+			cv::Mat BackgroundDifferences;
+			cv::morphologyEx(binaryImage, BackgroundDifferences, cv::MORPH_CLOSE, kernel);
 
 			// Region labeling
 			cv::Mat stats, centroids, labelImage;
-			connectedComponentsWithStats(binaryImage, labelImage, stats, centroids);
+			cv::connectedComponentsWithStats(BackgroundDifferences, labelImage, stats, centroids);
 
-			cv::Mat resultImage = inputImage.clone();
+			// Image with detected objects marked
+			cv::Mat DetectedObjectImage = inputImage.clone();
 
 			for(int i = 1; i < stats.rows; i++) {
+				
 				int topLeftx = stats.at<int>(i, 0);
 				int topLefty = stats.at<int>(i, 1);
 				int width = stats.at<int>(i, 2);
@@ -95,20 +98,27 @@ namespace HSLU
 				double cy = centroids.at<double>(i, 1);
 
 				cv::Rect rect(topLeftx, topLefty, width, height);
-				cv::rectangle(resultImage, rect, cv::Scalar(255, 0, 0));
+				cv::rectangle(DetectedObjectImage, rect, cv::Scalar(255, 0, 0));
 
 				cv::Point2d cent(cx, cy);
-				cv::circle(resultImage, cent, 5, cv::Scalar(128,0,0), -1);
+				cv::circle(DetectedObjectImage, cent, 5, cv::Scalar(128,0,0), -1);
+				//addDebugMessage(sprintf("Labeling Region %i: Area(%i), centroid(%i, %i)", i, area, cx, cy));
 			}
 
 			if(mProcessingDbgImages)
 			{
-				mProcessingDbgImages->addDebugImage(debugImage0, resultImage);
-				//mProcessingDbgImages->addDebugImage(debugImage1, resultImage);
+				mProcessingDbgImages->addDebugImage(debugImage0, mEstimatedBackground);
+				mProcessingDbgImages->addDebugImage(debugImage1, BackgroundDifferences);
+				mProcessingDbgImages->addDebugImage(debugImage1, DetectedObjectImage);
 			}
 
+			// Estimate Background
+			
 		}
-		mPrevImage = inputImage;
+		else
+		{
+			mEstimatedBackground = inputImage;
+		}
 			
 		return imageData;
 	}
