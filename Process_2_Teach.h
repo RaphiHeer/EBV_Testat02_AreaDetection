@@ -72,8 +72,9 @@ namespace HSLU
 		std::string debugImage1;
 		std::string debugImage2;
 
-		cv::Mat mPrevImage;
-
+		/**
+		 * @brief Extimated background image
+		 */
 		cv::Mat mEstimatedBackground;
 
 	private:
